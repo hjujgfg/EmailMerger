@@ -1,0 +1,35 @@
+plugins {
+    id 'java'
+}
+
+apply plugin : "application"
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+group 'org.hjujgfg'
+version '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    testCompile group: 'junit', name: 'junit', version: '4.12'
+}
+
+ext {
+    javaMainClass = "org.hjujgfg.Main"
+}
+
+task runWithJavaExec(type: JavaExec) {
+    group = "Execution"
+    description = "Run the main class with JavaExecTask"
+    classpath = sourceSets.main.runtimeClasspath
+    standardInput = System.in
+    standardOutput = System.out
+    main = javaMainClass
+}
+
+
+
