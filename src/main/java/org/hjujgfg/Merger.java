@@ -1,16 +1,13 @@
 package org.hjujgfg;
 
 import java.util.*;
-import java.util.stream.Stream;
 
 public class Merger {
 
-    private final Map<String, String> emailToUser;
-    private final Map<String, Set<String>> userToEmails;
+    private final Map<String, String> emailToUsers;
 
     public Merger() {
-        emailToUser = new HashMap<>();
-        userToEmails = new HashMap<>();
+        emailToUsers = new HashMap<>();
     }
 
     public void processLine(String userLine) {
@@ -26,38 +23,44 @@ public class Merger {
         if (name.isEmpty()) { // we might skip this check, the only problem will be ugly output, same as input
             throw new IllegalArgumentException(String.format("No user specified in string: \"%s\"", userLine));
         }
-        String[] emails = userLine.substring(arrowIndex + 2).split(","); // 2nd O(n)
 
+        String[] emails = userLine.substring(arrowIndex + 2).split(","); // 2nd O(n)
+        String uniqName = uniqName(name);
         Set<String> uniqEmails = new HashSet<>();
-        String potentialUser = null;
-        for (String email : emails) { // 3rd O(n)
-            if (email.trim().isEmpty()) { // we might skip this check, the only problem will be ugly output, same as input
+        Set<String> closureUsers = new HashSet<>();
+        for (String e : emails) { // 3rd O(n)
+            String email = e.trim();
+            if (email.isEmpty()) { // we might skip this check, the only problem will be ugly output, same as input
                 throw new IllegalArgumentException(String.format("Empty email specified in string: \"%s\"", userLine));
             }
-            uniqEmails.add(email.trim()); // O(1) as it's hash set
-            if (potentialUser == null) {
-                String existingUser = emailToUser.get(email.trim()); // O(1) as it's hash map
-                if (existingUser != null) {
-                    potentialUser = existingUser;
+            uniqEmails.add(email); // O(1)
+            String previousUser = emailToUsers.putIfAbsent(email, uniqName); // O(1)
+            if (previousUser != null) {
+                closureUsers.add(previousUser); // O(1)
+            }
+        }
+        if (!closureUsers.isEmpty()) {
+            // here we have some kind of a progression with fluctuating difference
+            // but the complexity is n - Σ(mx), where x ∈ ( m .. M ]; if m == M -> 0 idk how to put it correctly in this notation)
+            // where n is the total number of emails by the end of the input,
+            // mx - number of emails for x-th user,
+            // m - index of a current user
+            // M - total number of users
+            for (String email : emailToUsers.keySet()) {
+                if (closureUsers.contains(emailToUsers.get(email))) {
+                    emailToUsers.put(email, uniqName);
                 }
             }
         }
-
-        if (potentialUser == null) {
-            String uniqName = name + UUID.randomUUID();
-            userToEmails.put(uniqName, uniqEmails); // O(1) as it's hash map
-            uniqEmails.forEach(e -> emailToUser.put(e.trim(), uniqName)); // 4th O(n) + O(1) for .put()
-        } else {
-            userToEmails.get(potentialUser).addAll(uniqEmails); // O(1) for .get() + 4th O(n) for .addAll() - iteration is inside
-            for (String e : uniqEmails) { // 5th O(n)
-                emailToUser.putIfAbsent(e.trim(), potentialUser); // O(1)
-            }
-        }
-
-        // Worst case - 5 * O(n)
     }
 
-    public Stream<Map.Entry<String, Set<String>>> streamResult() {
-        return userToEmails.entrySet().stream(); // O(m)
+    public Map<String, Set<String>> getResult() {
+        Map<String, Set<String>> result = new HashMap<>();
+        emailToUsers.forEach((email, user) -> result.computeIfAbsent(user, s -> new HashSet<>()).add(email));
+        return result;
+    }
+
+    private String uniqName(String name) {
+        return name + UUID.randomUUID();
     }
 }

@@ -5,7 +5,6 @@ import org.junit.Test;
 
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -58,7 +57,7 @@ public class MergerTest {
         assertEquals(1, actual.size());
         actual.forEach((key, value) -> {
             String actualkey = key.substring(0, key.length() - 36);
-            assertEquals("q", actualkey);
+            //assertEquals("q", actualkey);
             assertEquals(3, value.size());
             assertTrue(value.contains("123"));
             assertTrue(value.contains("321"));
@@ -75,8 +74,8 @@ public class MergerTest {
         assertEquals(2, actual.size());
         actual.forEach((key, value) -> {
             String actualkey = key.substring(0, key.length() - 36);
-            assertTrue(actualkey.equals("q") || actualkey.equals("w"));
-            if (actualkey.equals("q")) {
+            assertTrue(actualkey.equals("p") || actualkey.equals("w"));
+            if (actualkey.equals("p")) {
                 assertEquals(3, value.size());
                 assertTrue(value.contains("123"));
                 assertTrue(value.contains("321"));
@@ -106,6 +105,26 @@ public class MergerTest {
         });
     }
 
+    @Test
+    public void should_fill_for_multiple_users_with_complex_closure() {
+        Map<String, Set<String>> actual = runForInputs(
+            "q -> 123, 321",
+            "p -> 678, 876",
+            "p -> 876, 987",
+            "w -> 987, 321");
+        assertEquals(1, actual.size());
+        actual.forEach((key, value) -> {
+            String actualkey = key.substring(0, key.length() - 36);
+            assertEquals("w", actualkey);
+            assertEquals(5, value.size());
+            assertTrue(value.contains("123"));
+            assertTrue(value.contains("321"));
+            assertTrue(value.contains("678"));
+            assertTrue(value.contains("876"));
+            assertTrue(value.contains("987"));
+        });
+    }
+
     @Test(expected = IllegalArgumentException.class)
     public void should_throw_illegal_argument_exception_for_user_without_emails() {
         runForInputs("q ->    ");
@@ -130,8 +149,6 @@ public class MergerTest {
         for (String s : inputs) {
             merger.processLine(s);
         }
-        return merger.streamResult().collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (s1, s2) -> {
-            throw new RuntimeException("Programming error, duplicate entries returned!");
-        }));
+        return merger.getResult();
     }
 }

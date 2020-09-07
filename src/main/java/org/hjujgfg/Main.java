@@ -19,7 +19,8 @@ public class Main {
 
     public void run() {
         ip.produce().forEach(merger::processLine);
-        merger.streamResult()
+        merger.getResult().entrySet()
+            .stream()
             .map(formatter::format)
             .forEach(linesConsumer);
     }
