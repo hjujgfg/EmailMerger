@@ -1,6 +1,7 @@
 package org.hjujgfg;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class Merger {
 
@@ -10,28 +11,14 @@ public class Merger {
         emailToUsers = new HashMap<>();
     }
 
-    public void processLine(String userLine) {
-        if (userLine == null) {
-            throw new IllegalArgumentException("No email could be extracted from nothing :(");
-        }
-        int arrowIndex = userLine.lastIndexOf("->"); // 1st O(n)
-        if (arrowIndex < 0) {
-            throw new IllegalArgumentException(String.format("Wrong message format for string: \"%s\"", userLine));
-        }
-        String name = userLine.substring(0, arrowIndex).trim();
-
-        if (name.isEmpty()) { // we might skip this check, the only problem will be ugly output, same as input
-            throw new IllegalArgumentException(String.format("No user specified in string: \"%s\"", userLine));
-        }
-
-        String[] emails = userLine.substring(arrowIndex + 2).split(","); // 2nd O(n)
+    public void add(String name, Collection<String> emails) {
         String uniqName = uniqName(name);
         Set<String> uniqEmails = new HashSet<>();
         Set<String> closureUsers = new HashSet<>();
         for (String e : emails) { // 3rd O(n)
             String email = e.trim();
             if (email.isEmpty()) { // we might skip this check, the only problem will be ugly output, same as input
-                throw new IllegalArgumentException(String.format("Empty email specified in string: \"%s\"", userLine));
+                throw new IllegalArgumentException(String.format("Empty email specified in string: \"%s\""));
             }
             uniqEmails.add(email); // O(1)
             String previousUser = emailToUsers.putIfAbsent(email, uniqName); // O(1)
@@ -58,6 +45,25 @@ public class Merger {
         Map<String, Set<String>> result = new HashMap<>();
         emailToUsers.forEach((email, user) -> result.computeIfAbsent(user, s -> new HashSet<>()).add(email));
         return result;
+    }
+
+    public void processLine(String userLine) {
+        if (userLine == null) {
+            throw new IllegalArgumentException("No email could be extracted from nothing :(");
+        }
+        int arrowIndex = userLine.lastIndexOf("->"); // 1st O(n)
+        if (arrowIndex < 0) {
+            throw new IllegalArgumentException(String.format("Wrong message format for string: \"%s\"", userLine));
+        }
+        String name = userLine.substring(0, arrowIndex).trim();
+
+        if (name.isEmpty()) { // we might skip this check, the only problem will be ugly output, same as input
+            throw new IllegalArgumentException(String.format("No user specified in string: \"%s\"", userLine));
+        }
+
+        String[] emails = userLine.substring(arrowIndex + 2).split(","); // 2nd O(n)
+
+        add(name, Arrays.stream(emails).collect(Collectors.toList()));
     }
 
     private String uniqName(String name) {
